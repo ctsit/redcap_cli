@@ -24,9 +24,10 @@
 # Copyright (c) 2015, University of Florida
 # All rights reserved.
 
-import sys
+import sys, traceback
 import argparse
 import json
+import logging
 from redcap import Project, RedcapError
 
 def main():
@@ -82,9 +83,30 @@ def main():
         dest='records',
         default='',
         help='Specify a list of records, separated by spaces or comma, for which data should be returned.')
+    # Additional verbosity
+    parser.add_argument(
+        '-d',
+        '--debug',
+        dest="loglevel",
+        default=logging.WARNING,
+        const=logging.DEBUG,
+        action="store_const",
+        help="Print even more detailed output"
+        )
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        dest="loglevel",
+        const=logging.INFO,
+        action="store_const",
+        help="Print detailed output"
+        )
 
     # prepare the arguments we were given
     args = vars(parser.parse_args())
+
+    # configure logger
+    logging.basicConfig(level=args['loglevel'])
 
     # According to http://pycap.readthedocs.org/en/latest/api.html
     # allowed data_types are: csv, json, xml
@@ -103,7 +125,12 @@ def main():
     try:
         project = Project(args['url'], args['token'], "", args['verify_ssl'])
     except:
-        print "Cannot connect to project at " + args['url'] + ' with token ' + args['token']
+        
+        # Produce varying levels of output corresponding to loglevel
+        logging.debug(traceback.format_list(traceback.extract_tb(sys.exc_traceback)))
+        logging.info(traceback.format_exc())
+        logging.error("Cannot connect to project at " + args['url'] + ' with token ' + args['token'] + "\nAdd '-d, --debug' flag for more info")
+        
         quit()
 
     # either we export data...
@@ -129,7 +156,10 @@ def main():
         try:
             input = open(file, 'r')
         except IOError:
-            print "Cannot open file " + file
+            # Produce varying levels of output corresponding to loglevel
+            logging.debug(traceback.format_list(traceback.extract_tb(sys.exc_traceback)))
+            logging.info(traceback.format_exc())
+            logging.error("Cannot open file" + file)
             quit()
         if 'json' == data_type:
             json_data = json.load(input)

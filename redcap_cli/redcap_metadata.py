@@ -63,6 +63,30 @@ def main():
     #     dest='fields',
     #     default='',
     #     help='Specify a list of fields, separated by spaces, for which metadata should be returned.')
+    # Additional verbosity
+    parser.add_argument(
+        '-d',
+        '--debug',
+        dest="loglevel",
+        default=logging.WARNING,
+        const=logging.DEBUG,
+        action="store_const",
+        help="Print even more detailed output"
+        )
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        dest="loglevel",
+        const=logging.INFO,
+        action="store_const",
+        help="Print detailed output"
+        )
+
+    # prepare the arguments we were given
+    args = vars(parser.parse_args())
+
+    # configure logger
+    logging.basicConfig(level=args['loglevel'])
 
     # prepare the arguments we were given
     args = vars(parser.parse_args())
@@ -80,7 +104,12 @@ def main():
     try:
         project = Project(args['url'], args['token'], "", args['verify_ssl'])
     except:
-        print "Cannot connect to project at " + args['url'] + ' with token ' + args['token']
+        
+        # Produce varying levels of output corresponding to loglevel
+        logging.debug(traceback.format_list(traceback.extract_tb(sys.exc_traceback)))
+        logging.info(traceback.format_exc())
+        logging.error("Cannot connect to project at " + args['url'] + ' with token ' + args['token'] + "\nAdd '-d, --debug' flag for more info")
+        
         quit()
 
     # my_forms = args['forms'].split()
