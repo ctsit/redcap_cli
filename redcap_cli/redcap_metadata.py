@@ -24,7 +24,8 @@
 # Copyright (c) 2015, University of Florida
 # All rights reserved.
 
-import sys
+import sys, traceback
+import logging
 import argparse
 from redcap import Project, RedcapError
 import re

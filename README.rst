@@ -83,6 +83,8 @@ option.
       -r RECORDS, --records RECORDS
                             Specify a list of records, separated by spaces, for
                             which data should be returned.
+      -d, --debug           Print even more detailed output
+      -v, --verbose         Print detailed output
 
 Input data
 ----------
