@@ -30,6 +30,15 @@ import json
 import logging
 from redcap import Project, RedcapError
 
+def examine_exception(trace_limit):
+    # Produce varying levels of output corresponding to verbosity level and length of stacktrace
+    if trace_limit != 0:
+        trace_len = len(sys.exc_info())
+        adjusted_trace_limit = trace_len - (trace_len/trace_limit) + 1
+        print(traceback.format_exc(limit=adjusted_trace_limit))
+    else:
+        print "Use '-v', flag to examine traceback"
+        
 def main():
 
     parser = argparse.ArgumentParser(
@@ -83,30 +92,20 @@ def main():
         dest='records',
         default='',
         help='Specify a list of records, separated by spaces or comma, for which data should be returned.')
-    # Additional verbosity
-    parser.add_argument(
-        '-d',
-        '--debug',
-        dest="loglevel",
-        default=logging.WARNING,
-        const=logging.DEBUG,
-        action="store_const",
-        help="Print even more detailed output"
-        )
+    # Flag for additional verbosity
     parser.add_argument(
         '-v',
-        '--verbose',
-        dest="loglevel",
-        const=logging.INFO,
-        action="store_const",
-        help="Print detailed output"
+        dest="verbosity_level",
+        action="count",
+        default=0,
+        help="Print stacktrace, use '-vv' or '-vvv' to print longer traceback"
         )
 
     # prepare the arguments we were given
     args = vars(parser.parse_args())
 
-    # configure logger
-    logging.basicConfig(level=args['loglevel'])
+    # set trace limit by verbosity level
+    trace_limit = args['verbosity_level']
 
     # According to http://pycap.readthedocs.org/en/latest/api.html
     # allowed data_types are: csv, json, xml
@@ -126,11 +125,11 @@ def main():
         project = Project(args['url'], args['token'], "", args['verify_ssl'])
     except:
         
-        # Produce varying levels of output corresponding to loglevel
-        logging.debug(traceback.format_list(traceback.extract_tb(sys.exc_traceback)))
-        logging.info(traceback.format_exc())
-        logging.error("Cannot connect to project at " + args['url'] + ' with token ' + args['token'] + "\nAdd '-d, --debug' flag for more info")
-        
+        print "Cannot connect to project at " + args['url'] + ' with token ' + args['token']
+
+        # Handle examination of stack trace dynamically
+        examine_exception(trace_limit)
+
         quit()
 
     # either we export data...
@@ -156,10 +155,12 @@ def main():
         try:
             input = open(file, 'r')
         except IOError:
-            # Produce varying levels of output corresponding to loglevel
-            logging.debug(traceback.format_list(traceback.extract_tb(sys.exc_traceback)))
-            logging.info(traceback.format_exc())
-            logging.error("Cannot open file" + file)
+            
+            print "Error: Cannot open file" + file
+            
+            # Handle examination of stack trace dynamically
+            examine_exception(trace_limit)    
+
             quit()
         if 'json' == data_type:
             json_data = json.load(input)
