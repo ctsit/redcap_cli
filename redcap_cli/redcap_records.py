@@ -30,6 +30,15 @@ import json
 import logging
 from redcap import Project, RedcapError
 
+def examine_exception(trace_limit):
+    # Produce varying levels of output corresponding to verbosity level and length of stacktrace
+    if trace_limit != 0:
+        trace_len = len(sys.exc_info())
+        adjusted_trace_limit = trace_len - (trace_len/trace_limit) + 1
+        print(traceback.format_exc(limit=adjusted_trace_limit))
+    else:
+        print "Use '-v', flag to examine traceback"
+        
 def main():
 
     parser = argparse.ArgumentParser(
@@ -97,8 +106,6 @@ def main():
 
     # set trace limit by verbosity level
     trace_limit = args['verbosity_level']
-    if trace_limit >= 3:
-        trace_limit = None
 
     # According to http://pycap.readthedocs.org/en/latest/api.html
     # allowed data_types are: csv, json, xml
@@ -118,13 +125,11 @@ def main():
         project = Project(args['url'], args['token'], "", args['verify_ssl'])
     except:
         
-        # Produce varying levels of output corresponding to verbosity level and length of stacktrace
         print "Cannot connect to project at " + args['url'] + ' with token ' + args['token']
-        if trace_limit != 0:
-            print(traceback.format_exc(limit=trace_limit))
-        else:
-            print "Use '-v', flag to examine traceback"
-        
+
+        # Handle examination of stack trace dynamically
+        examine_exception(trace_limit)
+
         quit()
 
     # either we export data...
@@ -150,13 +155,12 @@ def main():
         try:
             input = open(file, 'r')
         except IOError:
-            # Produce varying levels of output corresponding to verbosity level
+            
             print "Error: Cannot open file" + file
-            if trace_limit != 0:
-                print(traceback.format_exc(limit=trace_limit))
-            else:
-                print "Use '-v', flag to examine traceback"
-        
+            
+            # Handle examination of stack trace dynamically
+            examine_exception(trace_limit)    
+
             quit()
         if 'json' == data_type:
             json_data = json.load(input)
